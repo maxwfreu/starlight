@@ -1,6 +1,7 @@
 import type { APIContext } from 'astro';
 import { expect, test } from 'vitest';
 import { onRequest } from '../../locals';
+import { onRequest as onLayerRequest } from '../../layers';
 
 test('starlightRoute throws when accessed outside of a Starlight page', async () => {
 	const context = { locals: {}, currentLocale: 'en' } as APIContext;
@@ -27,4 +28,28 @@ test('starlightRoute returns as expected if it has been set', async () => {
 	await onRequest(context, async () => new Response());
 	context.locals.starlightRoute = { siteTitle: 'Test title' } as any;
 	expect(context.locals.starlightRoute.siteTitle).toBe('Test title');
+});
+
+test('CSS layers are correctly injected into the head', async () => {
+	const context = { locals: {}, currentLocale: 'en' } as APIContext;
+	const response = await onLayerRequest(context, async () => new Response('<html><head></head><body></body></html>', {
+		headers: {
+			'content-type': 'text/html',
+		},
+	}));
+	const body = await response.text();
+	expect(body).toEqual('<html><head><style>@layer starlight.base, starlight.reset, starlight.core, starlight.content, starlight.components, starlight.utils;</style></head><body></body></html>');
+	expect(response.headers.get('content-type')).toBe('text/html');
+});
+
+test('CSS layers are not injected into non-HTML responses', async () => {
+	const context = { locals: {}, currentLocale: 'en' } as APIContext;
+	const response = await onLayerRequest(context, async () => new Response('Not HTML', {
+		headers: {
+			'content-type': 'text/plain',
+		},
+	}));
+	const body = await response.text();
+	expect(body).toBe('Not HTML');
+	expect(response.headers.get('content-type')).toBe('text/plain');
 });

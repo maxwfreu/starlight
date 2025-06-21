@@ -70,6 +70,7 @@ export default function StarlightIntegration(
 				userConfig = starlightConfig;
 
 				addMiddleware({ entrypoint: '@astrojs/starlight/locals', order: 'pre' });
+				addMiddleware({ entrypoint: "@astrojs/starlight/layers", order: "post" })
 
 				if (!starlightConfig.disable404Route) {
 					injectRoute({
